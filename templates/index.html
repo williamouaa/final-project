@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Inventory Tracker</title>
+    <style>
+      /* Main page */
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #121212;
+        color: #f5f5f5; /* Text color */
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Centered box */
+      .container {
+        max-width: 900px;
+        margin: 20px auto;
+        background-color: #1e1e1e;
+        padding: 20px;
+        border-radius: 6px;
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+      }
+
+      h1 {
+        text-align: center;
+        margin-top: 0;
+      }
+
+      h2 {
+        margin-top: 25px;
+        margin-bottom: 10px;
+      }
+
+      p {
+        line-height: 1.4;
+      }
+
+      /* Form */
+      form {
+        margin-bottom: 10px;
+      }
+
+      label {
+        display: block;
+        margin-top: 8px;
+        font-size: 0.95rem;
+      }
+
+      input[type="text"],
+      input[type="number"] {
+        width: 100%;
+        padding: 6px;
+        margin-top: 4px;
+        border-radius: 4px;
+        border: 1px solid #444;
+        background-color: #222;
+        color: #f5f5f5;
+        box-sizing: border-box;
+      }
+
+      /* Buttons */
+      button {
+        padding: 7px 14px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+      }
+
+      .btn-primary {
+        background-color: #00bcd4;
+        color: #000;
+        font-weight: bold;
+        margin-top: 12px;
+      }
+
+      .btn-primary:hover {
+        background-color: #00a2ba;
+      }
+
+      .btn-delete {
+        background-color: #ff5c5c;
+        color: #000;
+      }
+
+      .btn-delete:hover {
+        background-color: #e64a4a;
+      }
+
+      .btn-edit {
+        background-color: #4caf50;
+        color: #000;
+        margin-right: 6px;
+      }
+
+      .btn-edit:hover {
+        background-color: #3e9141;
+      }
+
+      hr {
+        border: none;
+        border-top: 1px solid #333;
+        margin: 20px 0;
+      }
+
+      /* Table */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 0.93rem;
+      }
+
+      th,
+      td {
+        border: 1px solid #333;
+        padding: 6px;
+        text-align: left;
+      }
+
+      th {
+        background-color: #262626;
+      }
+
+      tr:nth-child(even) {
+        background-color: #202020;
+      }
+
+      tr:nth-child(odd) {
+        background-color: #181818;
+      }
+
+      .number-cell {
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      .profit-positive {
+        color: #6fdc6f;
+      }
+
+      .profit-negative {
+        color: #ff8080;
+      }
+
+      .actions-cell {
+        text-align: center;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>Inventory Tracker</h1>
+
+      <!-- Add New Item Form -->
+      <h2>Add New Item</h2>
+      <form action="/add" method="post">
+
+        <!-- Item name -->
+        <label for="name">Item Name:</label>
+        <input type="text" id="name" name="name" required>
+
+        <!-- Quantity -->
+        <label for="quantity">Quantity:</label>
+        <input type="number" id="quantity" name="quantity" min="1" required>
+
+        <!-- Category -->
+        <label for="category">Category:</label>
+        <input type="text" id="category" name="category">
+
+        <!-- Condition -->
+        <label for="condition">Condition:</label>
+        <input type="text" id="condition" name="condition">
+
+        <!-- Purchase price -->
+        <label for="purchase_price">Purchase Price (per item):</label>
+        <input
+          type="number"
+          id="purchase_price"
+          name="purchase_price"
+          min="0"
+          step="0.01"
+        >
+
+        <button type="submit" class="btn-primary">Add Item</button>
+      </form>
+
+      <hr>
+
+      <!-- Current Items List -->
+      <h2>Current Items</h2>
+
+      <!-- Export to CSV button -->
+      <form action="{{ url_for('export_csv') }}" method="get" style="text-align: right; margin-bottom: 10px;">
+        <button type="submit" class="btn-primary">Export as CSV</button>
+      </form>
+
+      {% if items %}
+        <table>
+          <thead>
+            <tr>
+              <th>Item Name</th>
+              <th>Quantity</th>
+              <th>Category</th>
+              <th>Condition</th>
+              <th>Purchase Price (per item)</th>
+              <th>Estimated Current Price (per item)</th>
+              <th>Estimated Profit/Loss (TOTAL)</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+              <tr>
+                <td>{{ item.name }}</td>
+                <td class="number-cell">{{ item.quantity }}</td>
+                <td>{{ item.category }}</td>
+                <td>{{ item.condition }}</td>
+                <td class="number-cell">
+                  ${{ "%.2f"|format(item.purchase_price) }}
+                </td>
+                <td class="number-cell">
+                  ${{ "%.2f"|format(item.current_price) }}
+                </td>
+                <td class="number-cell
+                  {% if item.profit_loss_total >= 0 %}
+                    profit-positive
+                  {% else %}
+                    profit-negative
+                  {% endif %}
+                ">
+                  ${{ "%.2f"|format(item.profit_loss_total) }}
+                </td>
+                <td class="actions-cell">
+
+                  <!-- Edit button -->
+                  <a href="{{ url_for('edit_item', item_index=loop.index0) }}">
+                    <button type="button" class="btn-edit">Edit</button>
+                  </a>
+
+                  <!-- Delete button -->
+                  <form action="/delete/{{ loop.index0 }}" method="post" style="display:inline;">
+                    <button type="submit" class="btn-delete">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>No items yet. Add one above!</p>
+      {% endif %}
+    </div>
+  </body>
+</html>
